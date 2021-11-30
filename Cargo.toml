@@ -1,16 +1,15 @@
 [package]
 name = "ordered-varint"
-version = "0.1.0"
+version = "0.1.0-dev.0"
 edition = "2021"
 description = "Byte-orderable, variable length encoding."
 repository = "https://github.com/khonsulabs/ordered-varint"
 license = "MIT OR Apache-2.0"
 keywords = ["encoding", "variable-length"]
 categories = ["encoding", "compression"]
-readme = "../README.md"
+readme = "./README.md"
 
 [dependencies]
-
 
 [dev-dependencies]
 rand = "0.8"

@@ -6,18 +6,19 @@ byte-orderable.
 [![crate version](https://img.shields.io/crates/v/ordered-varint.svg)](https://crates.io/crates/ordered-varint)
 [![Live Build Status](https://img.shields.io/github/workflow/status/khonsulabs/ordered-varint/Tests/main)](https://github.com/khonsulabs/ordered-varint/actions?query=workflow:Tests)
 [![HTML Coverage Report for `main` branch](https://khonsulabs.github.io/ordered-varint/coverage/badge.svg)](https://khonsulabs.github.io/ordered-varint/coverage/)
-[![Documentation for `main` branch](https://img.shields.io/badge/docs-main-informational)](https://khonsulabs.github.io/ordered-varint/main/ordered-varint/)
+[![Documentation for `main` branch](https://img.shields.io/badge/docs-main-informational)](https://khonsulabs.github.io/ordered-varint/main/ordered_varint/)
 
 This crate provides the `Variable` trait which encodes and decodes integers to
 an abbreviated format that ranges from 1 to 16 bytes. All signed integer types
 (i8, i16, i32, i64, and i128) are comparable with each other, and all unsigned
 integer types (u8, u16, u32, u64, and u128) are comparable with each other.
 **However, encoded signed and unsigned values are not able to be meaningfully
-compared to one another.
+compared to one another.**
 
 ## Example
 
-To run the included example, execute `cargo run --example demo`. The output will look similar to this:
+To run the included example, execute `cargo run --example demo`. The output will
+look similar to this:
 
 ```text
 Original bytes: 1968
