@@ -211,8 +211,11 @@ mod tests {
         roundtrip(2_u128.pow(108), 15);
         roundtrip(2_u128.pow(116) - 1, 15);
         roundtrip(2_u128.pow(116), 16);
+
+        // Maximum value
         roundtrip(2_u128.pow(124) - 1, 16);
 
+        // Above maximum value
         assert!(2_u128.pow(124).encode_variable(&mut Vec::new()).is_err());
     }
 
@@ -243,8 +246,15 @@ mod tests {
         roundtrip(2_i128.pow(115), 16);
         roundtrip(-(2_i128.pow(115) + 1), 16);
 
-        assert!(2_i128.pow(124).encode_variable(&mut Vec::new()).is_err());
-        assert!((-(2_i128.pow(124)) + 1)
+        // Maximum value
+        roundtrip(2_i128.pow(123) - 1, 16);
+        // Minimum value
+        roundtrip(-(2_i128.pow(123)), 16);
+
+        // Above maximum
+        assert!(2_i128.pow(123).encode_variable(&mut Vec::new()).is_err());
+        // Below minimum
+        assert!((-(2_i128.pow(123)) - 1)
             .encode_variable(&mut Vec::new())
             .is_err());
     }
