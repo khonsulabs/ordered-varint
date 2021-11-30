@@ -135,6 +135,7 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
+<span id="138">138</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std</span>::{
     <span class="ident">io</span>::{<span class="ident">Read</span>, <span class="ident">Write</span>},
     <span class="ident">num::TryFromIntError</span>,
@@ -150,6 +151,7 @@
 <span class="doccomment">/// length is used to determine the overall sign of the encoded value. The</span>
 <span class="doccomment">/// remaining 3 bits of the first byte and any additional bytes are then</span>
 <span class="doccomment">/// used to store the integer in big-endian encoding.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Debug</span>, <span class="ident">Hash</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Signed</span>(<span class="ident">i128</span>);
 
 <span class="kw">impl</span> <span class="ident">Variable</span> <span class="kw">for</span> <span class="ident">Signed</span> {
