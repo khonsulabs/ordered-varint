@@ -14,7 +14,7 @@ use crate::Variable;
 pub struct Unsigned(pub(crate) u128);
 
 impl Variable for Unsigned {
-    fn encode<W: Write>(&self, output: &mut W) -> std::io::Result<usize> {
+    fn encode_variable<W: Write>(&self, output: &mut W) -> std::io::Result<usize> {
         // We reserve the top 4 bits for the length information.
         if self.0 >> 124 != 0 {
             return Err(std::io::Error::from(std::io::ErrorKind::InvalidData));
@@ -45,7 +45,7 @@ impl Variable for Unsigned {
         Ok(total_length)
     }
 
-    fn decode<R: Read>(mut input: R) -> std::io::Result<Self> {
+    fn decode_variable<R: Read>(mut input: R) -> std::io::Result<Self> {
         let mut buffer = [0_u8; 16];
         input.read_exact(&mut buffer[0..1])?;
         let length = (buffer[0] >> 4) as usize;

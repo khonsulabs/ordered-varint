@@ -14,7 +14,7 @@ fn main() {
     // Encode the values.
     let mut encoded = original_values
         .iter()
-        .map(|value| value.to_vec().unwrap())
+        .map(|value| value.to_variable_vec().unwrap())
         .collect::<Vec<_>>();
 
     // Sort the original vec and the encoded vec.
@@ -24,7 +24,7 @@ fn main() {
     // Decode the encoded values.
     let decoded = encoded
         .iter()
-        .map(|encoded| u128::decode(encoded.as_slice()).unwrap())
+        .map(|encoded| u128::decode_variable(encoded.as_slice()).unwrap())
         .collect::<Vec<_>>();
 
     // This assert proves that the encoded values are encoded such that sorting

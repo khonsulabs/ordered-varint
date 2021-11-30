@@ -16,7 +16,7 @@ use crate::Variable;
 pub struct Signed(i128);
 
 impl Variable for Signed {
-    fn encode<W: Write>(&self, output: &mut W) -> std::io::Result<usize> {
+    fn encode_variable<W: Write>(&self, output: &mut W) -> std::io::Result<usize> {
         // We reserve 5 bits for a signed 4 bit number, ranging from -16..=15.
         let reserved = (self.0 as u128) >> 123;
         let check_bits = match reserved {
@@ -59,7 +59,7 @@ impl Variable for Signed {
         Ok(total_length)
     }
 
-    fn decode<R: Read>(mut input: R) -> std::io::Result<Self> {
+    fn decode_variable<R: Read>(mut input: R) -> std::io::Result<Self> {
         let mut buffer = [0_u8; 16];
         input.read_exact(&mut buffer[0..1])?;
 

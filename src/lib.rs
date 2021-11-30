@@ -28,14 +28,14 @@ pub use self::{signed::*, unsigned::*};
 /// Encodes and decodes a type using a variable-length format.
 pub trait Variable: Sized {
     /// Encodes `self` into `destination`, returning the number of bytes written upon success.
-    fn encode<W: Write>(&self, destination: &mut W) -> std::io::Result<usize>;
+    fn encode_variable<W: Write>(&self, destination: &mut W) -> std::io::Result<usize>;
     /// Decodes a variable length value from `source`.
-    fn decode<R: Read>(source: R) -> std::io::Result<Self>;
+    fn decode_variable<R: Read>(source: R) -> std::io::Result<Self>;
 
     /// Encodes `self` into a new `Vec<u8>`.
-    fn to_vec(&self) -> std::io::Result<Vec<u8>> {
+    fn to_variable_vec(&self) -> std::io::Result<Vec<u8>> {
         let mut output = Vec::with_capacity(16);
-        self.encode(&mut output)?;
+        self.encode_variable(&mut output)?;
         Ok(output)
     }
 }
@@ -43,12 +43,12 @@ pub trait Variable: Sized {
 macro_rules! impl_primitive_variable {
     ($ty:ty,  $dest:ty) => {
         impl Variable for $ty {
-            fn encode<W: Write>(&self, destination: &mut W) -> std::io::Result<usize> {
-                <$dest>::from(*self).encode(destination)
+            fn encode_variable<W: Write>(&self, destination: &mut W) -> std::io::Result<usize> {
+                <$dest>::from(*self).encode_variable(destination)
             }
 
-            fn decode<R: Read>(source: R) -> std::io::Result<Self> {
-                <$dest>::decode(source).and_then(|i| {
+            fn decode_variable<R: Read>(source: R) -> std::io::Result<Self> {
+                <$dest>::decode_variable(source).and_then(|i| {
                     <$ty>::try_from(i)
                         .map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidData))
                 })
@@ -77,7 +77,7 @@ mod tests {
 
     fn roundtrip<T: Variable + Eq + Debug + Copy>(value: T, expected_bytes: usize) {
         let mut bytes = Vec::new();
-        let encoded_length = value.encode(&mut bytes).unwrap();
+        let encoded_length = value.encode_variable(&mut bytes).unwrap();
         println!("Encoded {:?} to {:02x?}", value, bytes);
         assert_eq!(
             encoded_length, expected_bytes,
@@ -89,7 +89,7 @@ mod tests {
             bytes.len(),
             "vec has more bytes than returned value"
         );
-        let decoded = T::decode(&bytes[..]).unwrap();
+        let decoded = T::decode_variable(&bytes[..]).unwrap();
         assert_eq!(
             decoded, value,
             "decoded value did not match: {:?} vs {:?}",
@@ -213,7 +213,7 @@ mod tests {
         roundtrip(2_u128.pow(116), 16);
         roundtrip(2_u128.pow(124) - 1, 16);
 
-        assert!(2_u128.pow(124).encode(&mut Vec::new()).is_err());
+        assert!(2_u128.pow(124).encode_variable(&mut Vec::new()).is_err());
     }
 
     #[test]
@@ -243,16 +243,18 @@ mod tests {
         roundtrip(2_i128.pow(115), 16);
         roundtrip(-(2_i128.pow(115) + 1), 16);
 
-        assert!(2_i128.pow(124).encode(&mut Vec::new()).is_err());
-        assert!((-(2_i128.pow(124)) + 1).encode(&mut Vec::new()).is_err());
+        assert!(2_i128.pow(124).encode_variable(&mut Vec::new()).is_err());
+        assert!((-(2_i128.pow(124)) + 1)
+            .encode_variable(&mut Vec::new())
+            .is_err());
     }
 
     #[test]
     fn test_signed_ordering() {
         let mut entries = Vec::new();
         for i in i16::MIN..=i16::MAX {
-            println!("{} => {:02X?}", i, i.to_vec().unwrap());
-            entries.push(i.to_vec().unwrap());
+            println!("{} => {:02X?}", i, i.to_variable_vec().unwrap());
+            entries.push(i.to_variable_vec().unwrap());
         }
         let originals = entries.clone();
         entries.sort();
@@ -263,8 +265,8 @@ mod tests {
     fn test_unsigned_ordering() {
         let mut entries = Vec::new();
         for i in u16::MIN..=u16::MAX {
-            println!("{} => {:02X?}", i, i.to_vec().unwrap());
-            entries.push(i.to_vec().unwrap());
+            println!("{} => {:02X?}", i, i.to_variable_vec().unwrap());
+            entries.push(i.to_variable_vec().unwrap());
         }
         let originals = entries.clone();
         entries.sort();
