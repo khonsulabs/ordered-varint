@@ -5,9 +5,15 @@ use std::{
 
 use crate::Variable;
 
-pub struct VariableUnsigned(pub(crate) u128);
+/// An unsigned integer value
+///
+/// This type encodes values in the range `0..2.pow(124)` by using the first 4
+/// bits to denote an unsigned byte `length`. This length ranges from `0..=15`.
+/// The remaining 4 bits of the first byte and any additional bytes are then
+/// used to store the integer in big-endian encoding.
+pub struct Unsigned(pub(crate) u128);
 
-impl Variable for VariableUnsigned {
+impl Variable for Unsigned {
     fn encode<W: Write>(&self, output: &mut W) -> std::io::Result<usize> {
         // We reserve the top 4 bits for the length information.
         if self.0 >> 124 != 0 {
@@ -57,10 +63,10 @@ impl Variable for VariableUnsigned {
 
 macro_rules! impl_primitive_from_varint {
     ($ty:ty,  $dest:ty) => {
-        impl TryFrom<VariableUnsigned> for $ty {
+        impl TryFrom<Unsigned> for $ty {
             type Error = TryFromIntError;
 
-            fn try_from(value: VariableUnsigned) -> Result<Self, Self::Error> {
+            fn try_from(value: Unsigned) -> Result<Self, Self::Error> {
                 value.0.try_into()
             }
         }
@@ -69,7 +75,7 @@ macro_rules! impl_primitive_from_varint {
 
 macro_rules! impl_varint_from_primitive {
     ($ty:ty, $dest:ty) => {
-        impl From<$ty> for VariableUnsigned {
+        impl From<$ty> for Unsigned {
             fn from(value: $ty) -> Self {
                 Self(<$dest>::from(value))
             }
@@ -88,10 +94,10 @@ impl_primitive_from_varint!(u16, u128);
 impl_primitive_from_varint!(u32, u128);
 impl_primitive_from_varint!(u64, u128);
 
-impl TryFrom<VariableUnsigned> for u128 {
+impl TryFrom<Unsigned> for u128 {
     type Error = TryFromIntError;
 
-    fn try_from(value: VariableUnsigned) -> Result<Self, Self::Error> {
+    fn try_from(value: Unsigned) -> Result<Self, Self::Error> {
         Ok(value.0)
     }
 }

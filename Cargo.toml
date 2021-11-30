@@ -2,7 +2,18 @@
 name = "ordered-varint"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Byte-orderable, variable length encoding."
+repository = "https://github.com/khonsulabs/ordered-varint"
+license = "MIT OR Apache-2.0"
+keywords = ["encoding", "variable-length"]
+categories = ["encoding", "compression"]
+readme = "../README.md"
 
 [dependencies]
+
+
+[dev-dependencies]
+rand = "0.8"
+
+[workspace]
+members = ["xtask"]

@@ -5,9 +5,17 @@ use std::{
 
 use crate::Variable;
 
-pub struct VariableSigned(i128);
+/// A signed integer value.
+///
+/// This type encodes values in the range `-2.pow(123)..2.pow(123)` by using the
+/// first 5 bits to denote a signed byte `length`. This length ranges from
+/// `-15..=15`. The number of bytes read is always absolute, but the sign of the
+/// length is used to determine the overall sign of the encoded value. The
+/// remaining 3 bits of the first byte and any additional bytes are then
+/// used to store the integer in big-endian encoding.
+pub struct Signed(i128);
 
-impl Variable for VariableSigned {
+impl Variable for Signed {
     fn encode<W: Write>(&self, output: &mut W) -> std::io::Result<usize> {
         // We reserve 5 bits for a signed 4 bit number, ranging from -16..=15.
         let reserved = (self.0 as u128) >> 123;
@@ -22,15 +30,15 @@ impl Variable for VariableSigned {
             .iter()
             .enumerate()
             .find_map(|(index, &byte)| {
-                if byte != check_bits {
+                if byte == check_bits {
+                    None
+                } else {
                     let extra_bytes = 15 - index;
                     if byte >> 3 == check_bits >> 3 {
                         Some((extra_bytes + 1, extra_bytes))
                     } else {
                         Some((extra_bytes + 2, extra_bytes + 1))
                     }
-                } else {
-                    None
                 }
             })
             .unwrap_or((0, 0));
@@ -67,13 +75,13 @@ impl Variable for VariableSigned {
         if length < 15 {
             buffer[15 - length] |= buffer[0] & 0b111;
             if negative {
-                buffer[15 - length] ^= 0b11111000;
+                buffer[15 - length] ^= 0b1111_1000;
             }
             buffer[0] = 0;
         } else {
             buffer[0] &= 0b111;
             if negative {
-                buffer[0] ^= 0b11111000;
+                buffer[0] ^= 0b1111_1000;
             }
         }
 
@@ -89,10 +97,10 @@ impl Variable for VariableSigned {
 
 macro_rules! impl_primitive_from_varint {
     ($ty:ty,  $dest:ty) => {
-        impl TryFrom<VariableSigned> for $ty {
+        impl TryFrom<Signed> for $ty {
             type Error = TryFromIntError;
 
-            fn try_from(value: VariableSigned) -> Result<Self, Self::Error> {
+            fn try_from(value: Signed) -> Result<Self, Self::Error> {
                 value.0.try_into()
             }
         }
@@ -101,7 +109,7 @@ macro_rules! impl_primitive_from_varint {
 
 macro_rules! impl_varint_from_primitive {
     ($ty:ty, $dest:ty) => {
-        impl From<$ty> for VariableSigned {
+        impl From<$ty> for Signed {
             fn from(value: $ty) -> Self {
                 Self(<$dest>::from(value))
             }
@@ -120,10 +128,10 @@ impl_primitive_from_varint!(i16, i128);
 impl_primitive_from_varint!(i32, i128);
 impl_primitive_from_varint!(i64, i128);
 
-impl TryFrom<VariableSigned> for i128 {
+impl TryFrom<Signed> for i128 {
     type Error = TryFromIntError;
 
-    fn try_from(value: VariableSigned) -> Result<Self, Self::Error> {
+    fn try_from(value: Signed) -> Result<Self, Self::Error> {
         Ok(value.0)
     }
 }

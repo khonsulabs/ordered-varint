@@ -1,3 +1,23 @@
+#![doc= include_str!("../.rustme/docs.md")]
+#![forbid(unsafe_code)]
+#![warn(
+    clippy::cargo,
+    missing_docs,
+    // clippy::missing_docs_in_private_items,
+    clippy::nursery,
+    clippy::pedantic,
+    future_incompatible,
+    rust_2018_idioms,
+)]
+#![cfg_attr(doc, deny(rustdoc::all))]
+#![allow(
+    clippy::missing_errors_doc, // TODO clippy::missing_errors_doc
+    clippy::option_if_let_else,
+    clippy::module_name_repetitions,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_truncation
+)]
+
 mod signed;
 mod unsigned;
 
@@ -5,18 +25,18 @@ use std::io::{Read, Write};
 
 pub use self::{signed::*, unsigned::*};
 
+/// Encodes and decodes a type using a variable-length format.
 pub trait Variable: Sized {
+    /// Encodes `self` into `destination`, returning the number of bytes written upon success.
     fn encode<W: Write>(&self, destination: &mut W) -> std::io::Result<usize>;
+    /// Decodes a variable length value from `source`.
     fn decode<R: Read>(source: R) -> std::io::Result<Self>;
 
+    /// Encodes `self` into a new `Vec<u8>`.
     fn to_vec(&self) -> std::io::Result<Vec<u8>> {
         let mut output = Vec::with_capacity(16);
         self.encode(&mut output)?;
         Ok(output)
-    }
-
-    fn from_slice(bytes: &[u8]) -> std::io::Result<Self> {
-        Self::decode(bytes)
     }
 }
 
@@ -37,22 +57,23 @@ macro_rules! impl_primitive_variable {
     };
 }
 
-impl_primitive_variable!(u8, VariableUnsigned);
-impl_primitive_variable!(u16, VariableUnsigned);
-impl_primitive_variable!(u32, VariableUnsigned);
-impl_primitive_variable!(u64, VariableUnsigned);
-impl_primitive_variable!(u128, VariableUnsigned);
+impl_primitive_variable!(u8, Unsigned);
+impl_primitive_variable!(u16, Unsigned);
+impl_primitive_variable!(u32, Unsigned);
+impl_primitive_variable!(u64, Unsigned);
+impl_primitive_variable!(u128, Unsigned);
 
-impl_primitive_variable!(i8, VariableSigned);
-impl_primitive_variable!(i16, VariableSigned);
-impl_primitive_variable!(i32, VariableSigned);
-impl_primitive_variable!(i64, VariableSigned);
-impl_primitive_variable!(i128, VariableSigned);
+impl_primitive_variable!(i8, Signed);
+impl_primitive_variable!(i16, Signed);
+impl_primitive_variable!(i32, Signed);
+impl_primitive_variable!(i64, Signed);
+impl_primitive_variable!(i128, Signed);
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::fmt::Debug;
+
+    use super::*;
 
     fn roundtrip<T: Variable + Eq + Debug + Copy>(value: T, expected_bytes: usize) {
         let mut bytes = Vec::new();
@@ -229,7 +250,7 @@ mod tests {
     #[test]
     fn test_signed_ordering() {
         let mut entries = Vec::new();
-        for i in i8::MIN..=i8::MAX {
+        for i in i16::MIN..=i16::MAX {
             println!("{} => {:02X?}", i, i.to_vec().unwrap());
             entries.push(i.to_vec().unwrap());
         }
@@ -241,7 +262,7 @@ mod tests {
     #[test]
     fn test_unsigned_ordering() {
         let mut entries = Vec::new();
-        for i in u8::MIN..=u8::MAX {
+        for i in u16::MIN..=u16::MAX {
             println!("{} => {:02X?}", i, i.to_vec().unwrap());
             entries.push(i.to_vec().unwrap());
         }
