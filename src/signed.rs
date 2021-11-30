@@ -13,6 +13,7 @@ use crate::Variable;
 /// length is used to determine the overall sign of the encoded value. The
 /// remaining 3 bits of the first byte and any additional bytes are then
 /// used to store the integer in big-endian encoding.
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Signed(i128);
 
 impl Variable for Signed {

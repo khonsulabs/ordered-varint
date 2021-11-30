@@ -11,6 +11,7 @@ use crate::Variable;
 /// bits to denote an unsigned byte `length`. This length ranges from `0..=15`.
 /// The remaining 4 bits of the first byte and any additional bytes are then
 /// used to store the integer in big-endian encoding.
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Unsigned(pub(crate) u128);
 
 impl Variable for Unsigned {
