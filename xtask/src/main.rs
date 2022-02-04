@@ -1,29 +1,32 @@
 use khonsu_tools::{
-    anyhow,
-    code_coverage::{self, CodeCoverage},
+    universal::{anyhow, clap::Parser, DefaultConfig},
+    Commands,
 };
-use structopt::StructOpt;
-
-#[derive(StructOpt, Debug)]
-pub enum Commands {
-    GenerateCodeCoverageReport {
-        #[structopt(long = "install-dependencies")]
-        install_dependencies: bool,
-    },
-}
 
 fn main() -> anyhow::Result<()> {
-    let command = Commands::from_args();
-    match command {
-        Commands::GenerateCodeCoverageReport {
-            install_dependencies,
-        } => CodeCoverage::<CoverageConfig>::execute(install_dependencies),
+    let command = Commands::parse();
+    command.execute::<Config>()
+}
+
+struct Config;
+
+impl khonsu_tools::Config for Config {
+    type Publish = Self;
+    type Universal = Self;
+}
+
+impl khonsu_tools::publish::Config for Config {
+    fn paths() -> Vec<String> {
+        vec![String::from(".")]
     }
 }
 
-struct CoverageConfig;
+impl khonsu_tools::universal::Config for Config {
+    type Audit = DefaultConfig;
+    type CodeCoverage = Self;
+}
 
-impl code_coverage::Config for CoverageConfig {
+impl khonsu_tools::universal::code_coverage::Config for Config {
     fn ignore_paths() -> Vec<String> {
         vec![String::from("examples/*")]
     }
