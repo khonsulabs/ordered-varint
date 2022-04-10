@@ -97,7 +97,7 @@ impl Variable for Signed {
 }
 
 macro_rules! impl_primitive_from_varint {
-    ($ty:ty,  $dest:ty) => {
+    ($ty:ty) => {
         impl TryFrom<Signed> for $ty {
             type Error = TryFromIntError;
 
@@ -124,15 +124,24 @@ impl_varint_from_primitive!(i32, i128);
 impl_varint_from_primitive!(i64, i128);
 impl_varint_from_primitive!(i128, i128);
 
-impl_primitive_from_varint!(i8, i128);
-impl_primitive_from_varint!(i16, i128);
-impl_primitive_from_varint!(i32, i128);
-impl_primitive_from_varint!(i64, i128);
+impl_primitive_from_varint!(i8);
+impl_primitive_from_varint!(i16);
+impl_primitive_from_varint!(i32);
+impl_primitive_from_varint!(i64);
+impl_primitive_from_varint!(isize);
 
 impl TryFrom<Signed> for i128 {
     type Error = TryFromIntError;
 
     fn try_from(value: Signed) -> Result<Self, Self::Error> {
         Ok(value.0)
+    }
+}
+
+impl TryFrom<isize> for Signed {
+    type Error = TryFromIntError;
+
+    fn try_from(value: isize) -> Result<Self, Self::Error> {
+        Ok(Self(i128::try_from(value)?))
     }
 }

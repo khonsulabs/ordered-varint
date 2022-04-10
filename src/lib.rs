@@ -21,7 +21,7 @@
 mod signed;
 mod unsigned;
 
-use std::io::{Read, Write};
+use std::io::{ErrorKind, Read, Write};
 
 pub use self::{signed::*, unsigned::*};
 
@@ -49,7 +49,7 @@ macro_rules! impl_primitive_variable {
 
             fn decode_variable<R: Read>(source: R) -> std::io::Result<Self> {
                 <$dest>::decode_variable(source).and_then(|i| {
-                    <$ty>::try_from(i)
+                    <Self>::try_from(i)
                         .map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidData))
                 })
             }
@@ -68,6 +68,34 @@ impl_primitive_variable!(i16, Signed);
 impl_primitive_variable!(i32, Signed);
 impl_primitive_variable!(i64, Signed);
 impl_primitive_variable!(i128, Signed);
+
+impl Variable for usize {
+    fn encode_variable<W: Write>(&self, destination: &mut W) -> std::io::Result<usize> {
+        Unsigned::try_from(*self)
+            .map_err(|err| std::io::Error::new(ErrorKind::InvalidData, err))?
+            .encode_variable(destination)
+    }
+
+    fn decode_variable<R: Read>(source: R) -> std::io::Result<Self> {
+        Unsigned::decode_variable(source).and_then(|i| {
+            <Self>::try_from(i).map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidData))
+        })
+    }
+}
+
+impl Variable for isize {
+    fn encode_variable<W: Write>(&self, destination: &mut W) -> std::io::Result<usize> {
+        Signed::try_from(*self)
+            .map_err(|err| std::io::Error::new(ErrorKind::InvalidData, err))?
+            .encode_variable(destination)
+    }
+
+    fn decode_variable<R: Read>(source: R) -> std::io::Result<Self> {
+        Signed::decode_variable(source).and_then(|i| {
+            <Self>::try_from(i).map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidData))
+        })
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -257,6 +285,17 @@ mod tests {
         assert!((-(2_i128.pow(123)) - 1)
             .encode_variable(&mut Vec::new())
             .is_err());
+    }
+
+    #[test]
+    fn roundtrip_sizes() {
+        // This test is minimal due to *size types being dependent on the
+        // architecture limits.
+        roundtrip(usize::MAX, std::mem::size_of::<usize>() + 1);
+        roundtrip(usize::MIN, 1);
+        roundtrip(isize::MAX, std::mem::size_of::<isize>() + 1);
+        roundtrip(isize::MIN, std::mem::size_of::<isize>() + 1);
+        roundtrip(0_isize, 1);
     }
 
     #[test]
