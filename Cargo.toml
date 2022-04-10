@@ -1,6 +1,6 @@
 [package]
 name = "ordered-varint"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 description = "Byte-orderable, variable length encoding."
 repository = "https://github.com/khonsulabs/ordered-varint"
