@@ -76,13 +76,12 @@ impl Unsigned {
                 // still have data in them.
                 buffer[0] &= 0b1111;
             }
-            _ if N > 1 => {
+            _ => {
                 // Move the first byte's data into the last byte read, then
                 // clear our initial byte.
                 buffer[N - 1 - length] |= first_byte & 0b1111;
                 buffer[0] = 0;
             }
-            _ => {}
         }
         Ok(buffer)
     }

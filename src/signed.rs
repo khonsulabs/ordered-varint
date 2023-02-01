@@ -111,14 +111,13 @@ impl Signed {
                     buffer[0] ^= 0b1111_1000;
                 }
             }
-            _ if N > 1 => {
+            _ => {
                 buffer[N - 1 - length] |= first_byte & 0b111;
                 if negative {
                     buffer[N - 1 - length] ^= 0b1111_1000;
                 }
                 buffer[0] = 0;
             }
-            _ => {}
         }
 
         if negative && N > 1 {

@@ -315,6 +315,23 @@ mod tests {
     }
 
     #[test]
+    fn conversions() {
+        assert_eq!(
+            isize::try_from(Signed::from(isize::MAX)).unwrap(),
+            isize::MAX
+        );
+        assert_eq!(
+            usize::try_from(Unsigned::from(usize::MAX)).unwrap(),
+            usize::MAX
+        );
+        assert_eq!(i128::try_from(Signed::from(i128::MAX)).unwrap(), i128::MAX);
+        assert_eq!(
+            usize::try_from(Unsigned::from(usize::MAX)).unwrap(),
+            usize::MAX
+        );
+    }
+
+    #[test]
     fn test_signed_ordering() {
         let mut entries = Vec::new();
         for i in i16::MIN..=i16::MAX {
