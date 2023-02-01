@@ -144,7 +144,6 @@
 <a href="#144" id="144">144</a>
 <a href="#145" id="145">145</a>
 <a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::io::{Read, Write};
 <span class="kw">use </span>std::num::TryFromIntError;
 
@@ -223,13 +222,12 @@
                 // still have data in them.
                 </span>buffer[<span class="number">0</span>] &amp;= <span class="number">0b1111</span>;
             }
-            <span class="kw">_ if </span>N &gt; <span class="number">1 </span>=&gt; {
+            <span class="kw">_ </span>=&gt; {
                 <span class="comment">// Move the first byte&#39;s data into the last byte read, then
                 // clear our initial byte.
                 </span>buffer[N - <span class="number">1 </span>- length] |= first_byte &amp; <span class="number">0b1111</span>;
                 buffer[<span class="number">0</span>] = <span class="number">0</span>;
             }
-            <span class="kw">_ </span>=&gt; {}
         }
         <span class="prelude-val">Ok</span>(buffer)
     }
