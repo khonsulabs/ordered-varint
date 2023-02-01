@@ -9,19 +9,19 @@
     future_incompatible,
     rust_2018_idioms,
 )]
-#![cfg_attr(doc, deny(rustdoc::all))]
+#![cfg_attr(doc, allow(unknown_lints), warn(rustdoc::all))] // https://github.com/rust-lang/rust/pull/106316
 #![allow(
     clippy::missing_errors_doc, // TODO clippy::missing_errors_doc
     clippy::option_if_let_else,
     clippy::module_name_repetitions,
     clippy::cast_sign_loss,
-    clippy::cast_possible_truncation
+    clippy::cast_possible_truncation,
 )]
 
 mod signed;
 mod unsigned;
 
-use std::io::{ErrorKind, Read, Write};
+use std::io::{Read, Write};
 
 pub use self::signed::*;
 pub use self::unsigned::*;
@@ -29,7 +29,7 @@ pub use self::unsigned::*;
 /// Encodes and decodes a type using a variable-length format.
 pub trait Variable: Sized {
     /// Encodes `self` into `destination`, returning the number of bytes written upon success.
-    fn encode_variable<W: Write>(&self, destination: &mut W) -> std::io::Result<usize>;
+    fn encode_variable<W: Write>(&self, destination: W) -> std::io::Result<usize>;
     /// Decodes a variable length value from `source`.
     fn decode_variable<R: Read>(source: R) -> std::io::Result<Self>;
 
@@ -44,15 +44,12 @@ pub trait Variable: Sized {
 macro_rules! impl_primitive_variable {
     ($ty:ty,  $dest:ty) => {
         impl Variable for $ty {
-            fn encode_variable<W: Write>(&self, destination: &mut W) -> std::io::Result<usize> {
-                <$dest>::from(*self).encode_variable(destination)
+            fn encode_variable<W: Write>(&self, destination: W) -> std::io::Result<usize> {
+                <$dest>::encode_be_bytes(self.to_be_bytes(), destination)
             }
 
             fn decode_variable<R: Read>(source: R) -> std::io::Result<Self> {
-                <$dest>::decode_variable(source).and_then(|i| {
-                    <Self>::try_from(i)
-                        .map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidData))
-                })
+                <$dest>::decode_variable_bytes(source).map(<Self>::from_be_bytes)
             }
         }
     };
@@ -63,40 +60,14 @@ impl_primitive_variable!(u16, Unsigned);
 impl_primitive_variable!(u32, Unsigned);
 impl_primitive_variable!(u64, Unsigned);
 impl_primitive_variable!(u128, Unsigned);
+impl_primitive_variable!(usize, Unsigned);
 
 impl_primitive_variable!(i8, Signed);
 impl_primitive_variable!(i16, Signed);
 impl_primitive_variable!(i32, Signed);
 impl_primitive_variable!(i64, Signed);
 impl_primitive_variable!(i128, Signed);
-
-impl Variable for usize {
-    fn encode_variable<W: Write>(&self, destination: &mut W) -> std::io::Result<usize> {
-        Unsigned::try_from(*self)
-            .map_err(|err| std::io::Error::new(ErrorKind::InvalidData, err))?
-            .encode_variable(destination)
-    }
-
-    fn decode_variable<R: Read>(source: R) -> std::io::Result<Self> {
-        Unsigned::decode_variable(source).and_then(|i| {
-            <Self>::try_from(i).map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidData))
-        })
-    }
-}
-
-impl Variable for isize {
-    fn encode_variable<W: Write>(&self, destination: &mut W) -> std::io::Result<usize> {
-        Signed::try_from(*self)
-            .map_err(|err| std::io::Error::new(ErrorKind::InvalidData, err))?
-            .encode_variable(destination)
-    }
-
-    fn decode_variable<R: Read>(source: R) -> std::io::Result<Self> {
-        Signed::decode_variable(source).and_then(|i| {
-            <Self>::try_from(i).map_err(|_| std::io::Error::from(std::io::ErrorKind::InvalidData))
-        })
-    }
-}
+impl_primitive_variable!(isize, Signed);
 
 #[cfg(test)]
 mod tests {
@@ -104,14 +75,39 @@ mod tests {
 
     use super::*;
 
-    fn roundtrip<T: Variable + Eq + Debug + Copy>(value: T, expected_bytes: usize) {
+    trait TestType: Variable {
+        type Variable: From<Self> + TryInto<Self> + Variable + Eq + Debug;
+    }
+
+    macro_rules! impl_test_type {
+        ($name:ident, $kind:ident) => {
+            impl TestType for $name {
+                type Variable = $kind;
+            }
+        };
+    }
+
+    impl_test_type!(u8, Unsigned);
+    impl_test_type!(u16, Unsigned);
+    impl_test_type!(u32, Unsigned);
+    impl_test_type!(u64, Unsigned);
+    impl_test_type!(u128, Unsigned);
+    impl_test_type!(usize, Unsigned);
+
+    impl_test_type!(i8, Signed);
+    impl_test_type!(i16, Signed);
+    impl_test_type!(i32, Signed);
+    impl_test_type!(i64, Signed);
+    impl_test_type!(i128, Signed);
+    impl_test_type!(isize, Signed);
+
+    fn roundtrip<T: TestType + Eq + Debug + Copy>(value: T, expected_bytes: usize) {
         let mut bytes = Vec::new();
         let encoded_length = value.encode_variable(&mut bytes).unwrap();
-        println!("Encoded {:?} to {:02x?}", value, bytes);
+        println!("Encoded {value:?} to {bytes:02x?}");
         assert_eq!(
             encoded_length, expected_bytes,
-            "expected {} encoded bytes, got {}",
-            expected_bytes, encoded_length
+            "expected {expected_bytes} encoded bytes, got {encoded_length}"
         );
         assert_eq!(
             encoded_length,
@@ -121,8 +117,27 @@ mod tests {
         let decoded = T::decode_variable(&bytes[..]).unwrap();
         assert_eq!(
             decoded, value,
-            "decoded value did not match: {:?} vs {:?}",
-            value, decoded
+            "decoded value did not match: {value:?} vs {decoded:?}",
+        );
+
+        // Because we now decode and encode directly, we also need to test using
+        // Signed/Unsigned
+        let variable = <T::Variable as From<T>>::from(value);
+        let mut bytes = Vec::new();
+        let encoded_length = variable.encode_variable(&mut bytes).unwrap();
+        assert_eq!(
+            encoded_length, expected_bytes,
+            "expected {expected_bytes} encoded bytes, got {encoded_length}"
+        );
+        assert_eq!(
+            encoded_length,
+            bytes.len(),
+            "vec has more bytes than returned value"
+        );
+        let decoded = <T::Variable as Variable>::decode_variable(&bytes[..]).unwrap();
+        assert_eq!(
+            decoded, variable,
+            "decoded value did not match: {variable:?} vs {decoded:?}",
         );
     }
 
@@ -321,5 +336,15 @@ mod tests {
         let originals = entries.clone();
         entries.sort();
         assert_eq!(originals, entries);
+    }
+
+    #[test]
+    fn overflow_decode() {
+        let unsigned_max = u64::MAX.to_variable_vec().unwrap();
+        u32::decode_variable(&unsigned_max[..]).expect_err("u32 should overflow");
+        let signed_min = i64::MIN.to_variable_vec().unwrap();
+        i32::decode_variable(&signed_min[..]).expect_err("i32 should overflow");
+        let signed_max = i64::MAX.to_variable_vec().unwrap();
+        i32::decode_variable(&signed_max[..]).expect_err("i32 should overflow");
     }
 }

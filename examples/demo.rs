@@ -35,9 +35,9 @@ fn main() {
     // Print some summary information
     let total_encoded_bytes: usize = encoded.iter().map(|encoded| encoded.len()).sum();
     let total_original_bytes = original_values.len() * std::mem::size_of::<u128>();
-    println!("Original bytes: {}", total_original_bytes);
-    println!("Encoded bytes: {}", total_encoded_bytes);
+    println!("Original bytes: {total_original_bytes}");
+    println!("Encoded bytes: {total_encoded_bytes}");
     for (original, encoded) in original_values.into_iter().zip(encoded.into_iter()) {
-        println!("{} encodes as {:02x?}", original, encoded);
+        println!("{original} encodes as {encoded:02x?}");
     }
 }

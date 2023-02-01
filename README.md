@@ -4,7 +4,7 @@ Provides variable-length signed and unsigned integer encoding that is
 byte-orderable.
 
 [![crate version](https://img.shields.io/crates/v/ordered-varint.svg)](https://crates.io/crates/ordered-varint)
-[![Live Build Status](https://img.shields.io/github/workflow/status/khonsulabs/ordered-varint/Tests/main)](https://github.com/khonsulabs/ordered-varint/actions?query=workflow:Tests)
+[![Live Build Status](https://img.shields.io/github/actions/workflow/status/khonsulabs/ordered-varint/tests.yml?branch=main)](https://github.com/khonsulabs/ordered-varint/actions?query=workflow:Tests)
 [![HTML Coverage Report for `main` branch](https://khonsulabs.github.io/ordered-varint/coverage/badge.svg)](https://khonsulabs.github.io/ordered-varint/coverage/)
 [![Documentation for `main` branch](https://img.shields.io/badge/docs-main-informational)](https://khonsulabs.github.io/ordered-varint/main/ordered_varint/)
 

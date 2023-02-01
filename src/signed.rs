@@ -14,17 +14,27 @@ use crate::Variable;
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Signed(i128);
 
-impl Variable for Signed {
-    fn encode_variable<W: Write>(&self, output: &mut W) -> std::io::Result<usize> {
-        // We reserve 5 bits for a signed 4 bit number, ranging from -16..=15.
-        let reserved = (self.0 as u128) >> 123;
-        let check_bits = match reserved {
-            0 => 0,
-            0b11111 => 0xFF,
-            _ => return Err(std::io::Error::from(std::io::ErrorKind::InvalidData)),
+impl Signed {
+    pub(crate) fn encode_be_bytes<W: Write, const N: usize>(
+        mut value: [u8; N],
+        mut output: W,
+    ) -> std::io::Result<usize> {
+        let check_bits = if N == 16 {
+            // We reserve 5 bits for a signed 4 bit number, ranging from -16..=15.
+            let reserved = value[0] >> 3;
+            match reserved {
+                0 => 0,
+                0b11111 => 0xFF,
+                _ => return Err(std::io::Error::from(std::io::ErrorKind::InvalidData)),
+            }
+        } else if value[0] >> 7 == 0 {
+            // positive
+            0
+        } else {
+            // negative
+            0xff
         };
 
-        let mut value = self.0.to_be_bytes();
         let (total_length, extra_bytes) = value
             .iter()
             .enumerate()
@@ -32,7 +42,7 @@ impl Variable for Signed {
                 if byte == check_bits {
                     None
                 } else {
-                    let extra_bytes = 15 - index;
+                    let extra_bytes = N - 1 - index;
                     if byte >> 3 == check_bits >> 3 {
                         Some((extra_bytes + 1, extra_bytes))
                     } else {
@@ -49,13 +59,85 @@ impl Variable for Signed {
             2_usize.pow(4) - extra_bytes - 1
         };
 
-        // Clear the top bits to prepare for the header
-        value[16 - total_length] &= 0b111;
-        // Set the length bits
-        value[16 - total_length] |= (length_header << 3) as u8;
+        let encoded_length_header = (length_header as u8) << 3;
+        if total_length > N {
+            // We can't fit the length in the buffer.
+            output.write_all(&[encoded_length_header | (check_bits >> 5)])?;
+            output.write_all(&value)?;
+        } else {
+            // Clear the top bits to prepare for the header
+            value[N - total_length] &= 0b111;
+            // Set the length bits
+            value[N - total_length] |= encoded_length_header;
 
-        output.write_all(&value[16 - total_length..])?;
+            output.write_all(&value[N - total_length..])?;
+        }
+
         Ok(total_length)
+    }
+
+    pub(crate) fn decode_variable_bytes<R: Read, const N: usize>(
+        mut input: R,
+    ) -> std::io::Result<[u8; N]> {
+        let mut buffer = [0_u8; N];
+        input.read_exact(&mut buffer[0..1])?;
+        let first_byte = buffer[0];
+        let encoded_length = first_byte as usize >> 3;
+        let (negative, length) = if encoded_length >= 2_usize.pow(4) {
+            (false, encoded_length - 2_usize.pow(4))
+        } else {
+            (true, 2_usize.pow(4) - (encoded_length + 1))
+        };
+        if length > N {
+            return Err(std::io::Error::from(std::io::ErrorKind::InvalidData));
+        }
+
+        input.read_exact(&mut buffer[N - length..])?;
+
+        match N - length {
+            0 => {
+                // We overwrote our first byte, but the first byte has some 3
+                // bits of data we need to preserve.
+                let mut first_bits = first_byte & 0b111;
+                if negative {
+                    first_bits ^= 0b111;
+                }
+                buffer[0] |= first_bits << 5;
+            }
+            1 => {
+                // Clear the top 3 bits of the top byte, and negate if needed.
+                buffer[0] &= 0b111;
+                if negative {
+                    buffer[0] ^= 0b1111_1000;
+                }
+            }
+            _ if N > 1 => {
+                buffer[N - 1 - length] |= first_byte & 0b111;
+                if negative {
+                    buffer[N - 1 - length] ^= 0b1111_1000;
+                }
+                buffer[0] = 0;
+            }
+            _ => {}
+        }
+
+        if negative && N > 1 {
+            let bytes_to_negate = N - length;
+            // We know we can skip updating the last byte that contained data.
+            if bytes_to_negate > 1 {
+                for byte in &mut buffer[0..bytes_to_negate - 1] {
+                    *byte ^= 0xFF;
+                }
+            }
+        }
+
+        Ok(buffer)
+    }
+}
+
+impl Variable for Signed {
+    fn encode_variable<W: Write>(&self, output: W) -> std::io::Result<usize> {
+        Self::encode_be_bytes(self.0.to_be_bytes(), output)
     }
 
     fn decode_variable<R: Read>(mut input: R) -> std::io::Result<Self> {
@@ -128,18 +210,14 @@ impl_primitive_from_varint!(i32);
 impl_primitive_from_varint!(i64);
 impl_primitive_from_varint!(isize);
 
-impl TryFrom<Signed> for i128 {
-    type Error = TryFromIntError;
-
-    fn try_from(value: Signed) -> Result<Self, Self::Error> {
-        Ok(value.0)
+impl From<Signed> for i128 {
+    fn from(value: Signed) -> Self {
+        value.0
     }
 }
 
-impl TryFrom<isize> for Signed {
-    type Error = TryFromIntError;
-
-    fn try_from(value: isize) -> Result<Self, Self::Error> {
-        Ok(Self(i128::try_from(value)?))
+impl From<isize> for Signed {
+    fn from(value: isize) -> Self {
+        Self(value as i128)
     }
 }
