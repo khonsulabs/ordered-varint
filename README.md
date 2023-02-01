@@ -39,6 +39,36 @@ Encoded bytes: 1068
 10633823966279326983230456482242756607 encodes as [f7, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
 ```
 
+Another example showing signed encoding is available by running `cargo run
+--example demo-signed`. The output will look similar to this:
+
+```text
+Original bytes: 3920
+Encoded bytes: 2165
+-5316911983139663491615228241121378305 encodes as [03, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+-2658455991569831745807614120560689153 encodes as [05, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+-1329227995784915872903807060280344577 encodes as [06, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+-664613997892457936451903530140172289 encodes as [07, 7f, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+[...]
+-65 encodes as [77, bf]
+-33 encodes as [77, df]
+-17 encodes as [77, ef]
+-9 encodes as [77, f7]
+-5 encodes as [7b]
+-3 encodes as [7d]
+1 encodes as [81]
+3 encodes as [83]
+7 encodes as [87]
+15 encodes as [88, 0f]
+31 encodes as [88, 1f]
+63 encodes as [88, 3f]
+[...]
+1329227995784915872903807060280344575 encodes as [f8, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+2658455991569831745807614120560689151 encodes as [f9, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+5316911983139663491615228241121378303 encodes as [fb, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+10633823966279326983230456482242756607 encodes as [ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff, ff]
+```
+
 ## Open-source Licenses
 
 This project, like all projects from [Khonsu Labs](https://khonsulabs.com/), are

@@ -6,8 +6,12 @@ fn main() {
     // Generate some random values
     let mut rng = thread_rng();
     let mut original_values = vec![];
-    for power in 1..124 {
-        original_values.push(2_u128.pow(power) - 1);
+    for power in 1..246 {
+        if power > 123 {
+            original_values.push(-(2_i128.pow(power - 123) + 1));
+        } else {
+            original_values.push(2_i128.pow(power) - 1);
+        }
     }
 
     original_values.shuffle(&mut rng);
@@ -25,7 +29,7 @@ fn main() {
     // Decode the encoded values.
     let decoded = encoded
         .iter()
-        .map(|encoded| u128::decode_variable(encoded.as_slice()).unwrap())
+        .map(|encoded| i128::decode_variable(encoded.as_slice()).unwrap())
         .collect::<Vec<_>>();
 
     // This assert proves that the encoded values are encoded such that sorting
