@@ -326,8 +326,8 @@ mod tests {
         );
         assert_eq!(i128::try_from(Signed::from(i128::MAX)).unwrap(), i128::MAX);
         assert_eq!(
-            usize::try_from(Unsigned::from(usize::MAX)).unwrap(),
-            usize::MAX
+            u128::try_from(Unsigned::from(u128::MAX)).unwrap(),
+            u128::MAX
         );
     }
 
