@@ -1,3 +1,4 @@
-var N = null;var sourcesIndex = {};
-sourcesIndex["ordered_varint"] = {"name":"","files":["lib.rs","signed.rs","unsigned.rs"]};
+var sourcesIndex = JSON.parse('{\
+"ordered_varint":["",[],["lib.rs","signed.rs","unsigned.rs"]]\
+}');
 createSourceSidebar();

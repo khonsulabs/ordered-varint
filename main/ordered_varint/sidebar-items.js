@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Signed","A signed integer value."],["Unsigned","An unsigned integer value"]],"trait":[["Variable","Encodes and decodes a type using a variable-length format."]]});
+window.SIDEBAR_ITEMS = {"struct":[["Signed","A signed integer value."],["Unsigned","An unsigned integer value"]],"trait":[["Variable","Encodes and decodes a type using a variable-length format."]]};
