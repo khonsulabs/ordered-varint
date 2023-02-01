@@ -1,7 +1,5 @@
-use std::{
-    io::{Read, Write},
-    num::TryFromIntError,
-};
+use std::io::{Read, Write};
+use std::num::TryFromIntError;
 
 use crate::Variable;
 

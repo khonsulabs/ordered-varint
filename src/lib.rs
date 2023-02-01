@@ -23,7 +23,8 @@ mod unsigned;
 
 use std::io::{ErrorKind, Read, Write};
 
-pub use self::{signed::*, unsigned::*};
+pub use self::signed::*;
+pub use self::unsigned::*;
 
 /// Encodes and decodes a type using a variable-length format.
 pub trait Variable: Sized {

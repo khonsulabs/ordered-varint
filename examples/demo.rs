@@ -1,5 +1,6 @@
 use ordered_varint::Variable;
-use rand::{prelude::SliceRandom, thread_rng};
+use rand::prelude::SliceRandom;
+use rand::thread_rng;
 
 fn main() {
     // Generate some random values
